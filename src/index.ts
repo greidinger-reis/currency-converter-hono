@@ -7,14 +7,14 @@ const app = new Hono();
 app.get("/currency/:currencyName", async (c) => {
     const redis = Redis.fromEnv(c.env);
     const currencyName = c.req.param("currencyName");
-    const multiplierFromUSD = await redis.get(currencyName);
+    const rateFromUSD = await redis.get(currencyName);
 
-    return c.json({ multiplierFromUSD });
+    return c.json({ rateFromUSD });
 });
 
 const addCurrencySchema = z.object({
     currencyName: z.string().min(1).max(3),
-    multiplierFromUSD: z.number().positive(),
+    rateFromUSD: z.number().positive(),
 });
 
 app.post("/currency", async (c) => {
@@ -23,10 +23,7 @@ app.post("/currency", async (c) => {
 
     try {
         const currency = addCurrencySchema.parse(body);
-        await redis.set(
-            `${currency.currencyName}`,
-            `${currency.multiplierFromUSD}`
-        );
+        await redis.set(`${currency.currencyName}`, `${currency.rateFromUSD}`);
         return c.json({ message: "Currency added", currency }, 201);
     } catch {
         return c.json({ error: "Invalid currency" }, 400);
